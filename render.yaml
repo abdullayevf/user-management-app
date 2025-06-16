@@ -20,4 +20,6 @@ services:
     startCommand: cd client && npm run preview
     envVars:
       - key: VITE_API_URL
-        value: https://user-management-backend.onrender.com 
+        value: https://user-management-backend.onrender.com/api
+      - key: PORT
+        value: 3000 
