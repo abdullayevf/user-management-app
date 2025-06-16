@@ -4,7 +4,7 @@ import { router } from '@/router'
 import { toast } from 'vue-sonner'
 import { useRouter, useRoute } from 'vue-router'
 
-const API_BASE_URL = 'http://localhost:3000/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
 // Add axios interceptor to check user status
 axios.interceptors.response.use(

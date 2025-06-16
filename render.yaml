@@ -11,4 +11,13 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: PORT
-        value: 3001 
+        value: 3001
+
+  - type: web
+    name: user-management-frontend
+    env: node
+    buildCommand: cd client && npm install && npm run build
+    startCommand: cd client && npm run preview
+    envVars:
+      - key: VITE_API_URL
+        value: https://user-management-backend.onrender.com 
