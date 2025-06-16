@@ -29,6 +29,7 @@ interface User {
 const users = ref<User[]>([])
 const selectedUserIds = ref(new Set<number>())
 const isLoading = ref(true)
+const isActionInProgress = ref(false)
 const error = ref<string | null>(null)
 
 const authStore = useAuthStore()
@@ -96,9 +97,13 @@ const formatTimeDifference = (lastLogin: Date) => {
 }
 
 async function bulkAction(action: 'block' | 'unblock' | 'delete') {
-    if (action === 'delete') {
-        try {
-            const response = await axios.delete(`http://localhost:3000/api/users/${action}`, {
+    if (selectedUserIds.value.size === 0) return;
+
+    isActionInProgress.value = true; // Set action in progress
+
+    try {
+        if (action === 'delete') {
+            const response = await axios.delete(`/api/users/${action}`, {
                 data: { userIds: Array.from(selectedUserIds.value) }
             })
 
@@ -106,14 +111,8 @@ async function bulkAction(action: 'block' | 'unblock' | 'delete') {
             users.value = users.value.filter(user => !selectedUserIds.value.has(user.id))
             selectedUserIds.value.clear()
             toast.success(message || 'Users deleted successfully')
-        } catch (error: any) {
-            const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to delete users'
-            toast.error(errorMessage)
-            console.error(error)
-        }
-    } else {
-        try {
-            const response = await axios.post(`http://localhost:3000/api/users/${action}`, {
+        } else {
+            const response = await axios.post(`/api/users/${action}`, {
                 userIds: Array.from(selectedUserIds.value)
             })
 
@@ -125,11 +124,13 @@ async function bulkAction(action: 'block' | 'unblock' | 'delete') {
             )
             selectedUserIds.value.clear()
             toast.success(message || `${action === 'block' ? 'Blocked' : 'Unblocked'} users successfully`)
-        } catch (error: any) {
-            const errorMessage = error.response?.data?.error || error.response?.data?.message || `Failed to ${action} users`
-            toast.error(errorMessage)
-            console.error(error)
         }
+    } catch (error: any) {
+        const errorMessage = error.response?.data?.error || error.response?.data?.message || `Failed to ${action} users`
+        toast.error(errorMessage)
+        console.error(error)
+    } finally {
+        isActionInProgress.value = false; // Reset action in progress
     }
 }
 </script>
@@ -141,7 +142,7 @@ async function bulkAction(action: 'block' | 'unblock' | 'delete') {
         <div v-else>
             <div class="flex gap-2 items-center mb-4">
                 <Button 
-                    :disabled="selectedUserIds.size === 0" 
+                    :disabled="selectedUserIds.size === 0 || isActionInProgress" 
                     class="cursor-pointer"
                     @click="bulkAction('block')"
                     title="Block selected users">
@@ -149,7 +150,7 @@ async function bulkAction(action: 'block' | 'unblock' | 'delete') {
                     <Lock :size="20" class="ml-2" />
                 </Button>
                 <Button 
-                    :disabled="selectedUserIds.size === 0" 
+                    :disabled="selectedUserIds.size === 0 || isActionInProgress" 
                     variant="outline" 
                     class="cursor-pointer"
                     @click="bulkAction('unblock')"
@@ -157,7 +158,7 @@ async function bulkAction(action: 'block' | 'unblock' | 'delete') {
                     <LockOpen :size="20" />
                 </Button>
                 <Button 
-                    :disabled="selectedUserIds.size === 0" 
+                    :disabled="selectedUserIds.size === 0 || isActionInProgress" 
                     variant="destructive" 
                     class="cursor-pointer"
                     @click="bulkAction('delete')"
